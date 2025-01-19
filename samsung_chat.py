@@ -1,7 +1,4 @@
-import logging
-
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-#from langchain_community.document_loaders import PDFPlumberLoader
 from langchain_community.document_loaders import DirectoryLoader
 from langchain_community.vectorstores import FAISS
 from langchain_core.output_parsers import StrOutputParser
@@ -10,7 +7,6 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_openai import ChatOpenAI
-from langchain_core.output_parsers import StrOutputParser
 from operator import itemgetter
 from langchain_core.runnables import RunnableLambda, RunnableParallel
 
@@ -22,7 +18,7 @@ import os
 from apikeys import OPENAI_API_KEY
 
 import langchain
-langchain.verbose = True
+#langchain.verbose = True
 
 
 import logging
@@ -36,9 +32,8 @@ os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 # FILE:%(filename)s FUNC:%(funcName)s 
 logging.basicConfig(
     format='[LINE%(lineno)d] %(levelname)s:%(message)s',
-    level=logging.CRITICAL
+    level=logging.ERROR
 )
-
 
 
 # Step 1: Load documents from the directory
@@ -63,13 +58,11 @@ vectorstore = FAISS.from_documents(documents=split_documents, embedding=embeddin
 # Step 5: Retriever
 retriever = vectorstore.as_retriever()
 
-
 # Step 6: Define a template for the chatbot's response
 prompt = PromptTemplate.from_template(prompts.korean_prompt)
 
 # Step 7: LLM
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-
 
 # Step 8: Chain
 chain = (
@@ -86,19 +79,15 @@ chain = (
 )
 
 
-
-
-# 세션 기록을 저장할 딕셔너리
+# Dictionary to store session history
 session_history = {}
 
-
-# 세션 ID를 기반으로 세션 기록을 가져오는 함수
 def get_session_history(session_ids):
     #print(f"[Session ID]: {session_ids}")
     if session_ids not in session_history:
         # Store new ChatMessageHistory in 'session_history'
         session_history[session_ids] = ChatMessageHistory()
-    return session_history[session_ids]  # 해당 세션 ID에 대한 세션 기록 반환
+    return session_history[session_ids]
 
 
 # RAG Chain with history
@@ -120,12 +109,11 @@ def samsung_chatbot(log_level = logging.INFO):
             print("챗봇: 대화해주셔서 감사합니다. 좋은 하루 보내세요!")
             break
 
-        with debug_logging(logging.INFO):
+        with debug_logging(log_level):
             response = rag_with_history.invoke({"question": user_input},
                                                  config={"configurable": {"session_id": "foo"}}
                                             )
         print(f"챗봇: {response}\n")
-        #print("docs: ", response["source_documents"])
 
 
 if __name__ == "__main__":
