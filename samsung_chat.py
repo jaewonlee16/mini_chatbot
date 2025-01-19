@@ -16,10 +16,10 @@ os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 chatbot_template = PromptTemplate(
     input_variables=["history", "input"],
     template=(
-        "You are a helpful chatbot representing SAMSUNG Electronics. "
-        "You will answer questions and provide detailed information about Samsung products. "
-        "Maintain a professional and engaging tone. "
-        "\n\nConversation History:\n{history}\nUser: {input}\nChatbot:"
+        "당신은 삼성전자를 대표하는 유용한 챗봇입니다."
+        "당신은 질문에 답하고 삼성 제품에 대한 자세한 정보를 제공할 것입니다."
+        "전문적인 어조를 유지하세요."
+        "\n\n대화 기록:\n{history}\n사용자: {input}\n챗봇:"
     ),
 )
 
@@ -35,17 +35,17 @@ conversation = ConversationChain(
 )
 
 def samsung_chatbot():
-    print("Hello! I'm your Samsung Electronics chatbot. How can I assist you today?")
-    print("(Type 'exit' to end the conversation.)\n")
+    print("안녕하세요! 삼성전자 챗봇입니다. 어떻게 도와드릴까요?")
+    print("(대화를 종료하시려면 'exit'을 입력하세요.)\n")
 
     while True:
-        user_input = input("You: ")
-        if user_input.lower() == 'exit':
-            print("Chatbot: Thank you for chatting with me! Have a great day!")
+        user_input = input("사용자: ")
+        if user_input.lower() in ["종료", "exit", "quit"]:
+            print("챗봇: 대화해주셔서 감사합니다. 좋은 하루 보내세요!")
             break
 
         response = conversation.invoke(input=user_input)
-        print(f"Chatbot: {response}\n")
+        print(f"챗봇: {response}\n")
 
 if __name__ == "__main__":
     samsung_chatbot()
