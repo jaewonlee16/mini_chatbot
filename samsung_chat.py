@@ -1,3 +1,5 @@
+import logging
+
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 #from langchain_community.document_loaders import PDFPlumberLoader
 from langchain_community.document_loaders import DirectoryLoader
@@ -10,8 +12,10 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from operator import itemgetter
+from langchain_core.runnables import RunnableLambda, RunnableParallel
 
 import prompts
+from utils import debug_logging, print_context
 
 # For OpenAI API
 import os
@@ -20,9 +24,22 @@ from apikeys import OPENAI_API_KEY
 import langchain
 langchain.verbose = True
 
+
+import logging
+
+# Step 0: Environment settings
 # Set up OpenAI API key
 #OPENAI_API_KEY = "your_openai_api_key_here"
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+
+# Logging
+# FILE:%(filename)s FUNC:%(funcName)s 
+logging.basicConfig(
+    format='[LINE%(lineno)d] %(levelname)s:%(message)s',
+    level=logging.CRITICAL
+)
+
+
 
 # Step 1: Load documents from the directory
 print("Loading documents...")
@@ -46,23 +63,29 @@ vectorstore = FAISS.from_documents(documents=split_documents, embedding=embeddin
 # Step 5: Retriever
 retriever = vectorstore.as_retriever()
 
+
 # Step 6: Define a template for the chatbot's response
 prompt = PromptTemplate.from_template(prompts.korean_prompt)
 
 # Step 7: LLM
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
+
 # Step 8: Chain
 chain = (
-    {
-        "context": itemgetter("question") | retriever,
-        "question": itemgetter("question"),
-        "chat_history": itemgetter("chat_history"),
-    }
+    RunnableParallel({
+            "context": itemgetter("question") | retriever,
+            "question": itemgetter("question"),
+            "chat_history": itemgetter("chat_history"),
+        }
+    )
+    | RunnableLambda(print_context)
     | prompt
     | llm
     | StrOutputParser()
 )
+
+
 
 
 # 세션 기록을 저장할 딕셔너리
@@ -87,7 +110,7 @@ rag_with_history = RunnableWithMessageHistory(
 )
 
 
-def samsung_chatbot():
+def samsung_chatbot(log_level = logging.INFO):
     print("안녕하세요! 삼성전자 챗봇입니다. 어떻게 도와드릴까요?")
     print("(대화를 종료하시려면 '종료'를 입력하세요.)\n")
 
@@ -97,10 +120,14 @@ def samsung_chatbot():
             print("챗봇: 대화해주셔서 감사합니다. 좋은 하루 보내세요!")
             break
 
-        response = rag_with_history.invoke({"question": user_input},
-                                             config={"configurable": {"session_id": "foo"}}
+        with debug_logging(logging.INFO):
+            response = rag_with_history.invoke({"question": user_input},
+                                                 config={"configurable": {"session_id": "foo"}}
                                             )
         print(f"챗봇: {response}\n")
+        #print("docs: ", response["source_documents"])
+
 
 if __name__ == "__main__":
-    samsung_chatbot()
+    log_level = logging.INFO
+    samsung_chatbot(log_level)
