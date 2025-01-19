@@ -129,5 +129,8 @@ def samsung_chatbot(log_level = logging.INFO):
 
 
 if __name__ == "__main__":
-    log_level = logging.INFO
-    samsung_chatbot(log_level)
+    log_levels = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
+    print("Choose logging Level from 0 to 4 (2: logging.INFO shows retrieval context)")
+    print("0: logging.DEBUG\n1: logging.INFO\n2: logging.WARNING \n3: logging.ERROR\n4: logging.CRITICAL")
+    level = int(input())
+    samsung_chatbot(log_levels[level])
